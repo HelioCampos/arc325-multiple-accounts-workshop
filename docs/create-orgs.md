@@ -29,10 +29,13 @@ Create an Organization. This account will be your Billing account and you will c
 **Using CLI:**
 
 <code>
-    default_params='--region us-east-1 --profile billing' # Defining default parameters
+    # Defining default parameters
+
+    default_params='--region us-east-1 --profile billing'
 
     aws $default_params organizations create-organization --feature-set ALL
 </code>
+
 ```json
 {
     "Organization": {
@@ -57,6 +60,7 @@ Get the ID of the organization and save it in `ResourcesList.txt`
 <code>
     org_root_id=$(aws --output text $default_params organizations list-roots --query 'Roots[0].Id')
 </code>
+
 org_root_id variable will have a values like this:
 ```
 r-abcd
@@ -73,6 +77,7 @@ r-abcd
 
 <code>
     security_ou_id=$(aws --output text $default_params organizations create-organizational-unit --name Security --parent-id <b><i>$org_root_id</i></b> --query 'OrganizationalUnit.Id')
+    
     sed -E -i '' "s/(ID of the Security OU.+)/\1 $security_ou_id/g" ResourcesList.txt
 </code>
 
@@ -98,6 +103,7 @@ If you don't use the above's code --query, --output, and save the results in a v
 
 <code>
     shared_ou_id=$(aws --output text $default_params organizations create-organizational-unit --name "Shared Services" --parent-id <b><i>$org_root_id</i></b>)
+
     sed -E -i '' "s/(ID of the Shared Services OU.+)/\1 $shared_ou_id/g" ResourcesList.txt
 </code><br>
 
@@ -122,7 +128,9 @@ If you don't use the above's code --query, --output, and save the results in a v
 *   Use the correct organization ID for parameter `--parent-id` in the below command, create organizational unit.
 
 <code>
-    application_ou_id=$(aws --output text $default_params organizations create-organizational-unit --name Applications --parent-id <b><i>r-abcd</i></b>)
+    application_one_ou_id=$(aws --output text $default_params organizations create-organizational-unit --name Applications --parent-id <b><i>$org_root_id</i></b>)
+
+    sed -E -i '' "s/(ID of the Application One OU.+)/\1 $application_one_ou_id/g" ResourcesList.txt
 </code><br>
 
 
@@ -137,7 +145,7 @@ If you don't use the above's code --query, --output, and save the results in a v
 }
 ```
 
-> Save the value of Applications OU Id (e.g. ou-abcd-7example) returned by the above command or from the UI in ResourcesList.txt file.
+> If done by hand, save the value of Applications OU Id (e.g. ou-abcd-7example) returned by the above command or from the UI in ResourcesList.txt file.
 
 
 ## Create required AWS accounts
@@ -163,10 +171,17 @@ If you don't use the above's code --query, --output, and save the results in a v
 
 Update the --email parameter to appropriate email address and run the command. Save the create request id in the 'ResourcesList.txt' file.
 
-<code>aws organizations create-account --role-name PayerAccountAccessRole --iam-user-access-to-billing ALLOW --region us-east-1 --profile billing --account-name "Security Account" --email <b><i>noreply+lzsec@example.com</i></b>
+<code>
+    security_email='noreply+lzsec@example.com'
+    
+    sed -E -i '' "s/(Email address of Security account.+)/\1 $security_email/g" ResourcesList.txt
+    
+    security_create_account_request=$(aws --output text $default_params organizations create-account --role-name PayerAccountAccessRole --iam-user-access-to-billing ALLOW --account-name "Security Account" --email <b><i>$security_email</i></b> --query 'CreateAccountStatus.Id')
+    
+    sed -E -i '' "s/(Security Account create request id.+)/\1 $security_create_account_request/g" ResourcesList.txt
 </code>
 
-
+If you don't use the above's code --query, --output, and save the results in a variable, the output would be like this:
 ```json
 {
     "CreateAccountStatus": {
@@ -178,7 +193,7 @@ Update the --email parameter to appropriate email address and run the command. S
 }
 ```
 
-> Save the value of Create Account Request Id (e.g. car-77558640b99511e78c88511c44cd49c5) returned by the above command in ResourcesList.txt file to check the status if needed.
+> If done by hand, save the value of Create Account Request Id (e.g. car-77558640b99511e78c88511c44cd49c5) returned by the above command in ResourcesList.txt file to check the status if needed.
 
 ### Create Shared Services Account
 1.  Click ‘Add Account’ followed by [‘Create Account’](http://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_accounts_create.html).
@@ -193,11 +208,17 @@ Update the --email parameter to appropriate email address and run the command. S
 
 Update the --email parameter to appropriate email address and run the command. Save the create request id in the 'ResourcesList.txt' file.
 
+<code>
+    shared_services_email='noreply+lzss@example.com'
 
-<code>aws organizations create-account --role-name PayerAccountAccessRole --iam-user-access-to-billing ALLOW --region us-east-1 --profile billing --account-name "Shared Services Account" --email <b><i>noreply+lzss@example.com</i></b>
+    sed -E -i '' "s/(Email address of Shared Services account.+)/\1 $shared_services_email/g" ResourcesList.txt
+
+    shared_services_create_account_request=$(aws --output text $default_params organizations create-account --role-name PayerAccountAccessRole --iam-user-access-to-billing ALLOW --account-name "Shared Services Account" --email <b><i>$shared_services_email</i></b>)
+    
+    sed -E -i '' "s/(Shared Services Account create request id.+)/\1 $shared_services_create_account_request/g" ResourcesList.txt
 </code>
 
-
+If you don't use the above's code --query, --output, and save the results in a variable, the output would be like this:
 ```json
 {
     "CreateAccountStatus": {
@@ -223,7 +244,7 @@ Update the --email parameter to appropriate email address and run the command. S
 
 Update the --email parameter to appropriate email address and run the command. Save the create request id in the 'ResourcesList.txt' file.
 
-<code>aws organizations create-account --role-name PayerAccountAccessRole --iam-user-access-to-billing ALLOW --region us-east-1 --profile billing --account-name "Application One Account" --email <b><i>noreply+lzapp1@example.com</i></b>
+<code>aws --output text $default_params organizations create-account --role-name PayerAccountAccessRole --iam-user-access-to-billing ALLOW --account-name "Application One Account" --email <b><i>noreply+lzapp1@example.com</i></b>
 </code>
 
 
@@ -247,7 +268,7 @@ Navigate to 'Organize Accounts' tab in AWS Organizations console, which will dis
 Get the 12 digit AWS account Ids of the 'Security', 'Shared Services' and 'Applications' accounts.
 
 ```
-aws organizations list-accounts --region us-east-1 --profile billing --query 'Accounts[*].{Name:Name,Email:Email,AccountId:Id}' --output table
+aws --output table $default_params organizations list-accounts --query 'Accounts[*].{Name:Name,Email:Email,AccountId:Id}' --output table
 ```
 
 ```
@@ -265,7 +286,7 @@ aws organizations list-accounts --region us-east-1 --profile billing --query 'Ac
 
 If any of the accounts are missing, check the status of create account request using the following command by providing the correct creation request id for `--create-account-request-id` parameter and check the 'FailureReason' to fix it.
 
-<code>aws organizations describe-create-account-status --region us-east-1 --profile billing --create-account-request-id <b><i>car-bb4f1750cdef11e78b08511c66cd64c5</i></b>
+<code>aws --output json $default_params organizations describe-create-account-status --create-account-request-id <b><i>car-bb4f1750cdef11e78b08511c66cd64c5</i></b>
 </code>
 
 
@@ -290,14 +311,14 @@ Select the Security Account in the console and move it to Security OU as explain
 
 Provide the 12 digit account id of Security account for `--account-id` parameter, provide the ID of the organization (e.g. r-abcd) for `--source-parent-id` parameter and ID of the Security OU (e.g. ou-abcd-7example) for `--destination-parent-id`.
 
-<code>aws organizations move-account --region us-east-1 --profile billing --source-parent-id <b><i>r-abcd</i></b> --destination-parent-id <b><i>ou-abcd-7example</i></b> --account-id <b><i>987654321098</i></b>
+<code>aws --output json $default_params organizations move-account --source-parent-id <b><i>r-abcd</i></b> --destination-parent-id <b><i>ou-abcd-7example</i></b> --account-id <b><i>987654321098</i></b>
 </code></br>
 
 
 Check whether the account got moved successfully.
 
 <code>
-aws organizations list-accounts-for-parent --region us-east-1 --profile billing --query 'Accounts[&#42;].{Name:Name,Email:Email,Id:Id,Status:Status}' --output table --parent-id <b><i>ou-abcd-7example</i></b>
+aws --output table $default_params organizations list-accounts-for-parent --query 'Accounts[&#42;].{Name:Name,Email:Email,Id:Id,Status:Status}' --output table --parent-id <b><i>ou-abcd-7example</i></b>
 </code>
 
 ```
@@ -318,14 +339,14 @@ Select the Shared Services Account in the console and move it to Shared Services
 
 Provide the 12 digit account id of Shared Services account for `--account-id` parameter, provide the ID of the organization (e.g. r-abcd) for `--source-parent-id` parameter and ID of the Shared Services OU (e.g. ou-abcd-7example) for `--destination-parent-id`.
 
-<code>aws organizations move-account --region us-east-1 --profile billing --source-parent-id <b><i>r-abcd</i></b> --destination-parent-id <b><i>ou-abcd-7example</i></b> --account-id <b><i>321098987654</i></b>
+<code>aws --output json $default_params organizations move-account --source-parent-id <b><i>r-abcd</i></b> --destination-parent-id <b><i>ou-abcd-7example</i></b> --account-id <b><i>321098987654</i></b>
 </code><br>
 
 Check whether the account got moved successfully.
 
 
 <code>
-aws organizations list-accounts-for-parent --region us-east-1 --profile billing --query 'Accounts[&#42;].{Name:Name,Email:Email,Id:Id,Status:Status}' --output table --parent-id <b><i>ou-abcd-7example</i></b>
+aws --output table $default_params organizations list-accounts-for-parent --query 'Accounts[&#42;].{Name:Name,Email:Email,Id:Id,Status:Status}' --output table --parent-id <b><i>ou-abcd-7example</i></b>
 </code><br>
 
 ```
@@ -347,14 +368,14 @@ Select the Application One Account in the console and move it to Applications OU
 
 Provide the 12 digit account id of Application One account for `--account-id` parameter, provide the ID of the organization (e.g. r-abcd) for `--source-parent-id` parameter and ID of the Application One OU (e.g. ou-abcd-7example) for `--destination-parent-id`.
 
-<code>aws organizations move-account --region us-east-1 --profile billing --source-parent-id <b><i>r-abcd</i></b> --destination-parent-id <b><i>ou-abcd-7example</i></b> --account-id <b><i>654321987098</i></b>
+<code>aws --output json $default_params organizations move-account --source-parent-id <b><i>r-abcd</i></b> --destination-parent-id <b><i>ou-abcd-7example</i></b> --account-id <b><i>654321987098</i></b>
 </code><br>
 
 Check whether the account got moved successfully.
 
 
 <code>
-aws organizations list-accounts-for-parent --region us-east-1 --profile billing --query 'Accounts[&#42;].{Name:Name,Email:Email,Id:Id,Status:Status}' --output table --parent-id <b><i>ou-abcd-7example</i></b>
+aws --output table $default_params organizations list-accounts-for-parent --query 'Accounts[&#42;].{Name:Name,Email:Email,Id:Id,Status:Status}' --output table --parent-id <b><i>ou-abcd-7example</i></b>
 </code><br>
 
 ```
