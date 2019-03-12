@@ -27,9 +27,12 @@ Login to your [AWS Management Console](https://us-east-1.console.aws.amazon.com/
 Create an Organization. This account will be your Billing account and you will create additional account under this account.
 
 **Using CLI:**
-```
-aws organizations create-organization --feature-set ALL --region us-east-1 --profile billing
-```
+
+<code>
+    default_params='--region us-east-1 --profile billing' # Defining default parameters
+
+    aws $default_params organizations create-organization --feature-set ALL
+</code>
 ```json
 {
     "Organization": {
@@ -52,9 +55,9 @@ aws organizations create-organization --feature-set ALL --region us-east-1 --pro
 Get the ID of the organization and save it in `ResourcesList.txt`
 
 <code>
-aws organizations list-roots --region us-east-1 --profile billing --query 'Roots[0].Id'
+    org_root_id=$(aws --output text $default_params organizations list-roots --query 'Roots[0].Id')
 </code>
-
+org_root_id variable will have a values like this:
 ```
 r-abcd
 ```
@@ -68,10 +71,12 @@ r-abcd
 
 *   Use the correct organization ID for parameter `--parent-id` in the below command, create organizational unit.
 
-<code>aws organizations create-organizational-unit --region us-east-1 --profile billing --name Security --parent-id <b><i>r-abcd</i></b>
+<code>
+    security_ou_id=$(aws --output text $default_params organizations create-organizational-unit --name Security --parent-id <b><i>$org_root_id</i></b> --query 'OrganizationalUnit.Id')
+    sed -E -i '' "s/(ID of the Security OU.+)/\1 $security_ou_id/g" ResourcesList.txt
 </code>
 
-
+If you don't use the above's code --query, --output, and save the results in a variable, the output would be like this:
 ```json
 {
     "OrganizationalUnit": {
@@ -82,7 +87,7 @@ r-abcd
 }
 ```
 
-> Save the value of Security OU Id (e.g. ou-abcd-7example) returned by the above command or from the UI in ResourcesList.txt file.
+> If done by hand, save the value of Security OU Id (e.g. ou-abcd-7example) returned by the above command or from the UI in ResourcesList.txt file.
 
 #### Create Shared Services OU
 *   Create Shared Services Organizational Unit (OU) and name it `Shared Services` [following the steps in documentation](http://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_ous.html#create_ou).
@@ -92,10 +97,11 @@ r-abcd
 *   Use the correct organization ID for parameter `--parent-id` in the below command, create organizational unit.
 
 <code>
-aws organizations create-organizational-unit --region us-east-1 --profile billing --name "Shared Services" --parent-id <b><i>r-abcd</i></b>
+    shared_ou_id=$(aws --output text $default_params organizations create-organizational-unit --name "Shared Services" --parent-id <b><i>$org_root_id</i></b>)
+    sed -E -i '' "s/(ID of the Shared Services OU.+)/\1 $shared_ou_id/g" ResourcesList.txt
 </code><br>
 
-
+If you don't use the above's code --query, --output, and save the results in a variable, the output would be like this:
 ```json
 {
     "OrganizationalUnit": {
@@ -106,8 +112,7 @@ aws organizations create-organizational-unit --region us-east-1 --profile billin
 }
 ```
 
-> Save the value of Shared Services OU Id (e.g. ou-abcd-7example) returned by the above command or from the UI in ResourcesList.txt file.
-
+> If done by hand, save the value of Shared Services OU Id (e.g. ou-abcd-7example) returned by the above command or from the UI in ResourcesList.txt file.
 
 #### Create Applications OU
 *   Create Applications Organizational Unit (OU) and name it `Applications` [following the steps in documentation](http://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_ous.html#create_ou).
@@ -117,10 +122,11 @@ aws organizations create-organizational-unit --region us-east-1 --profile billin
 *   Use the correct organization ID for parameter `--parent-id` in the below command, create organizational unit.
 
 <code>
-aws organizations create-organizational-unit --region us-east-1 --profile billing --name Applications --parent-id <b><i>r-abcd</i></b>
+    application_ou_id=$(aws --output text $default_params organizations create-organizational-unit --name Applications --parent-id <b><i>r-abcd</i></b>)
 </code><br>
 
 
+If you don't use the above's code --query, --output, and save the results in a variable, the output would be like this:
 ```json
 {
     "OrganizationalUnit": {
@@ -402,3 +408,4 @@ You shall use the above snippet and update the appropriate Account ID in the rol
 *   Updated the AWS CLI config to enable Cross Account Access using role.
 
 ![create-orgs-image](../images/create-orgs.png)
+
